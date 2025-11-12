@@ -22,7 +22,6 @@ const inviteSchema = z.object({
 
 router.post("/login", async (req, res) => {
     const parsed = loginSchema.safeParse(req.body);
-    console.log(parsed)
     if (!parsed.success) return res.status(400).json(parsed.error.flatten());
     const { email, password } = parsed.data;
     const user = await User.findOne({ email });

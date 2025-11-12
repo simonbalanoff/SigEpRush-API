@@ -11,7 +11,6 @@ const PNMSchema = new Schema(
         phone: String,
         photoURL: String,
         photoKey: String,
-        tags: [String],
         status: {
             type: String,
             enum: ["new", "invited", "bid", "declined"],
