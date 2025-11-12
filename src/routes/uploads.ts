@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
-import { requireAuth } from "../middleware/authz.js";
-import { presignUpload } from "../services/storage.js";
+import { requireAuth } from "../middleware/authz";
+import { presignUpload } from "../services/storage";
 
 const router = Router();
 

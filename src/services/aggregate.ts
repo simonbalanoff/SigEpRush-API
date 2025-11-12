@@ -1,5 +1,5 @@
-import { Rating } from "../models/Rating.js";
-import { PNM } from "../models/PNM.js";
+import { Rating } from "../models/Rating";
+import { PNM } from "../models/PNM";
 
 export async function recomputeAggregate(pnmId: string) {
     const ratings = await Rating.find({ pnmId });

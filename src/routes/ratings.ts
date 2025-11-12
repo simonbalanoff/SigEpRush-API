@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { z } from "zod";
-import { Rating } from "../models/Rating.js";
-import { requireAuth } from "../middleware/authz.js";
-import { recomputeAggregate } from "../services/aggregate.js";
+import { Rating } from "../models/Rating";
+import { requireAuth } from "../middleware/authz";
+import { recomputeAggregate } from "../services/aggregate";
 
 const router = Router();
 

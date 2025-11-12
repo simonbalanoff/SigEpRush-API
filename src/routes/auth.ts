@@ -1,10 +1,10 @@
 import { Router } from "express";
 import { z } from "zod";
-import { User } from "../models/User.js";
-import { hashPassword, verifyPassword } from "../utils/password.js";
-import { signToken } from "../utils/jwt.js";
-import { config } from "../config/env.js";
-import { requireAuth, requireRole } from "../middleware/authz.js";
+import { User } from "../models/User";
+import { hashPassword, verifyPassword } from "../utils/password";
+import { signToken } from "../utils/jwt";
+import { config } from "../config/env";
+import { requireAuth, requireRole } from "../middleware/authz";
 
 const router = Router();
 
@@ -55,17 +55,5 @@ router.post("/invite", requireAuth, requireRole("Admin"), async (req, res) => {
     });
     res.json({ id: doc._id });
 });
-
-export async function seedAdmin() {
-    if (!config.ADMIN_SEED_EMAIL || !config.ADMIN_SEED_PASSWORD) return;
-    const existing = await User.findOne({ email: config.ADMIN_SEED_EMAIL });
-    if (existing) return;
-    await User.create({
-        name: "Admin",
-        email: config.ADMIN_SEED_EMAIL,
-        passwordHash: hashPassword(config.ADMIN_SEED_PASSWORD),
-        role: "Admin",
-    });
-}
 
 export default router;

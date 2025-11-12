@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { z } from "zod";
-import { PNM } from "../models/PNM.js";
-import { requireAuth, requireRole } from "../middleware/authz.js";
-import { config } from "../config/env.js";
+import { PNM } from "../models/PNM";
+import { requireAuth, requireRole } from "../middleware/authz";
+import { config } from "../config/env";
 
 const router = Router();
 
