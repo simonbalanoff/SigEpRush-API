@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { requireAuth } from "../middleware/authz";
+import { AuthedRequest, requireAuth } from "../middleware/authz";
 import { presignUpload } from "../services/storage";
 
 const router = Router();
@@ -11,7 +11,7 @@ const bodySchema = z.object({
     maxBytes: z.number().int().positive().optional(),
 });
 
-router.post("/uploads/presign", requireAuth, async (req, res) => {
+router.post("/uploads/presign", requireAuth, async (req: AuthedRequest, res) => {
     const parsed = bodySchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json(parsed.error.flatten());
     try {

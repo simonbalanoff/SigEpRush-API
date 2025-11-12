@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { PNM } from "../models/PNM";
-import { requireAuth, requireRole } from "../middleware/authz";
+import { AuthedRequest, requireAuth, requireRole } from "../middleware/authz";
 import { config } from "../config/env";
 import { deleteObject } from "../services/storage";
 
@@ -15,11 +15,7 @@ const upsertSchema = z.object({
     major: z.string().optional(),
     gpa: z.number().min(0).max(4).optional(),
     phone: z.string().optional(),
-    email: z.string().email().optional(),
-    instagram: z.string().optional(),
-    notes: z.string().optional(),
     photoURL: z.string().url().optional(),
-    tags: z.array(z.string()).optional(),
     status: z.enum(["new", "invited", "bid", "declined"]).optional(),
 });
 
@@ -27,7 +23,7 @@ router.post(
     "/pnms",
     requireAuth,
     requireRole("Admin", "Adder"),
-    async (req, res) => {
+    async (req: AuthedRequest, res) => {
         const parsed = upsertSchema.safeParse(req.body);
         if (!parsed.success)
             return res.status(400).json(parsed.error.flatten());
@@ -40,7 +36,7 @@ router.patch(
     "/pnms/:id",
     requireAuth,
     requireRole("Admin", "Adder"),
-    async (req, res) => {
+    async (req: AuthedRequest, res) => {
         const parsed = upsertSchema.partial().safeParse(req.body);
         if (!parsed.success)
             return res.status(400).json(parsed.error.flatten());
@@ -52,12 +48,11 @@ router.patch(
     }
 );
 
-router.get("/pnms", requireAuth, async (req, res) => {
+router.get("/pnms", requireAuth, async (req: AuthedRequest, res) => {
     const {
         q = "",
         status,
         year,
-        tag,
         sort = "-aggregate.avgScore,-aggregate.countRatings,-updatedAt",
         page = "1",
         limit = "50",
@@ -65,7 +60,6 @@ router.get("/pnms", requireAuth, async (req, res) => {
     const filter: any = {};
     if (status) filter.status = status;
     if (year) filter.classYear = Number(year);
-    if (tag) filter.tags = tag;
     if (q) {
         const rx = new RegExp(q, "i");
         filter.$or = [
@@ -73,7 +67,6 @@ router.get("/pnms", requireAuth, async (req, res) => {
             { lastName: rx },
             { preferredName: rx },
             { major: rx },
-            { tags: rx },
         ];
     }
     const skip = (Number(page) - 1) * Number(limit);
@@ -84,7 +77,7 @@ router.get("/pnms", requireAuth, async (req, res) => {
     res.json({ items });
 });
 
-router.get("/pnms/:id", requireAuth, async (req, res) => {
+router.get("/pnms/:id", requireAuth, async (req: AuthedRequest, res) => {
     const doc = await PNM.findById(req.params.id);
     if (!doc) return res.status(404).end();
     res.json(doc);
@@ -94,7 +87,7 @@ router.delete(
     "/pnms/:id",
     requireAuth,
     requireRole("Admin"),
-    async (req, res) => {
+    async (req: AuthedRequest, res) => {
         await PNM.findByIdAndDelete(req.params.id);
         res.status(204).end();
     }
@@ -106,7 +99,7 @@ router.post(
     "/pnms/:id/photo/attach",
     requireAuth,
     requireRole("Admin", "Adder"),
-    async (req, res) => {
+    async (req: AuthedRequest, res) => {
         const parsed = attachSchema.safeParse(req.body);
         if (!parsed.success)
             return res.status(400).json(parsed.error.flatten());

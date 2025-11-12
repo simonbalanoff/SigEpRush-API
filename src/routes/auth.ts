@@ -4,13 +4,13 @@ import { User } from "../models/User";
 import { hashPassword, verifyPassword } from "../utils/password";
 import { signToken } from "../utils/jwt";
 import { config } from "../config/env";
-import { requireAuth, requireRole } from "../middleware/authz";
+import { AuthedRequest, requireAuth, requireRole } from "../middleware/authz";
 
 const router = Router();
 
 const loginSchema = z.object({
     email: z.string().email(),
-    password: z.string().min(6),
+    password: z.string().min(5),
 });
 
 const inviteSchema = z.object({
@@ -22,6 +22,7 @@ const inviteSchema = z.object({
 
 router.post("/login", async (req, res) => {
     const parsed = loginSchema.safeParse(req.body);
+    console.log(parsed)
     if (!parsed.success) return res.status(400).json(parsed.error.flatten());
     const { email, password } = parsed.data;
     const user = await User.findOne({ email });
@@ -42,7 +43,7 @@ router.post("/login", async (req, res) => {
     });
 });
 
-router.post("/invite", requireAuth, requireRole("Admin"), async (req, res) => {
+router.post("/invite", requireAuth, requireRole("Admin"), async (req: AuthedRequest, res) => {
     const parsed = inviteSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json(parsed.error.flatten());
     const exists = await User.findOne({ email: parsed.data.email });

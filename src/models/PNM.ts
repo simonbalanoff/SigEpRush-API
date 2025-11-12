@@ -9,9 +9,6 @@ const PNMSchema = new Schema(
         major: String,
         gpa: { type: Number, min: 0, max: 4 },
         phone: String,
-        email: String,
-        instagram: String,
-        notes: String,
         photoURL: String,
         photoKey: String,
         tags: [String],
@@ -41,9 +38,6 @@ export type PNMDoc = {
     major?: string;
     gpa?: number;
     phone?: string;
-    email?: string;
-    instagram?: string;
-    notes?: string;
     photoURL?: string;
     photoKey?: string;
     tags?: string[];
