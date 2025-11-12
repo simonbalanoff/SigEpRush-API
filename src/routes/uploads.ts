@@ -7,7 +7,7 @@ const router = Router();
 
 const bodySchema = z.object({
     contentType: z.string().min(1),
-    prefix: z.string().optional(),
+    key: z.string().min(1).optional(),
     maxBytes: z.number().int().positive().optional(),
 });
 
@@ -17,7 +17,7 @@ router.post("/uploads/presign", requireAuth, async (req, res) => {
     try {
         const data = await presignUpload(parsed.data);
         res.json(data);
-    } catch (e) {
+    } catch {
         res.status(400).json({ error: "presign_failed" });
     }
 });

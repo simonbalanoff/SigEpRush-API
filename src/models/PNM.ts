@@ -13,6 +13,7 @@ const PNMSchema = new Schema(
         instagram: String,
         notes: String,
         photoURL: String,
+        photoKey: String,
         tags: [String],
         status: {
             type: String,
@@ -44,6 +45,7 @@ export type PNMDoc = {
     instagram?: string;
     notes?: string;
     photoURL?: string;
+    photoKey?: string;
     tags?: string[];
     status: "new" | "invited" | "bid" | "declined";
     aggregate?: {
