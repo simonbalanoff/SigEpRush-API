@@ -2,6 +2,12 @@ import { Schema, model } from "mongoose";
 
 const PNMSchema = new Schema(
     {
+        termId: {
+            type: Schema.Types.ObjectId,
+            ref: "Term",
+            required: true,
+            index: true,
+        },
         firstName: { type: String, required: true, trim: true },
         lastName: { type: String, required: true, trim: true },
         preferredName: String,
@@ -10,7 +16,6 @@ const PNMSchema = new Schema(
         gpa: { type: Number, min: 0, max: 4 },
         phone: String,
         photoURL: String,
-        photoKey: String,
         status: {
             type: String,
             enum: ["new", "invited", "bid", "declined"],
@@ -26,10 +31,11 @@ const PNMSchema = new Schema(
     { timestamps: true }
 );
 
-PNMSchema.index({ lastName: 1, firstName: 1 });
+PNMSchema.index({ termId: 1, lastName: 1, firstName: 1 });
 
 export type PNMDoc = {
     _id: any;
+    termId: any;
     firstName: string;
     lastName: string;
     preferredName?: string;
@@ -38,8 +44,6 @@ export type PNMDoc = {
     gpa?: number;
     phone?: string;
     photoURL?: string;
-    photoKey?: string;
-    tags?: string[];
     status: "new" | "invited" | "bid" | "declined";
     aggregate?: {
         avgScore: number;

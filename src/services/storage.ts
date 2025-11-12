@@ -1,6 +1,5 @@
 import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { createPresignedPost } from "@aws-sdk/s3-presigned-post";
-import crypto from "crypto";
 import { config } from "../config/env";
 
 type PresignInput = { contentType: string; key?: string; maxBytes?: number };
@@ -19,8 +18,8 @@ export async function presignUpload({
     maxBytes = 5 * 1024 * 1024,
 }: PresignInput) {
     if (!contentType.startsWith("image/"))
-        throw new Error("invalid content type");
-    const k = key ?? `pnm/${Date.now()}-${crypto.randomUUID()}`;
+        throw new Error("invalid_content_type");
+    const k = key || `pnm/${Date.now()}.jpg`;
     const result = await createPresignedPost(s3, {
         Bucket: config.S3_BUCKET,
         Key: k,
