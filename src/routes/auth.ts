@@ -1,0 +1,71 @@
+import { Router } from "express";
+import { z } from "zod";
+import { User } from "../models/User.js";
+import { hashPassword, verifyPassword } from "../utils/password.js";
+import { signToken } from "../utils/jwt.js";
+import { config } from "../config/env.js";
+import { requireAuth, requireRole } from "../middleware/authz.js";
+
+const router = Router();
+
+const loginSchema = z.object({
+    email: z.string().email(),
+    password: z.string().min(6),
+});
+
+const inviteSchema = z.object({
+    name: z.string().min(1),
+    email: z.string().email(),
+    password: z.string().min(6),
+    role: z.enum(["Admin", "Adder", "Member"]),
+});
+
+router.post("/login", async (req, res) => {
+    const parsed = loginSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json(parsed.error.flatten());
+    const { email, password } = parsed.data;
+    const user = await User.findOne({ email });
+    if (!user) return res.status(401).json({ error: "invalid" });
+    const ok = verifyPassword(password, user.passwordHash);
+    if (!ok) return res.status(401).json({ error: "invalid" });
+    user.lastLoginAt = new Date();
+    await user.save();
+    const token = signToken(String(user._id), user.email, user.name, user.role);
+    res.json({
+        token,
+        user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+        },
+    });
+});
+
+router.post("/invite", requireAuth, requireRole("Admin"), async (req, res) => {
+    const parsed = inviteSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json(parsed.error.flatten());
+    const exists = await User.findOne({ email: parsed.data.email });
+    if (exists) return res.status(409).json({ error: "exists" });
+    const doc = await User.create({
+        name: parsed.data.name,
+        email: parsed.data.email,
+        passwordHash: hashPassword(parsed.data.password),
+        role: parsed.data.role,
+    });
+    res.json({ id: doc._id });
+});
+
+export async function seedAdmin() {
+    if (!config.ADMIN_SEED_EMAIL || !config.ADMIN_SEED_PASSWORD) return;
+    const existing = await User.findOne({ email: config.ADMIN_SEED_EMAIL });
+    if (existing) return;
+    await User.create({
+        name: "Admin",
+        email: config.ADMIN_SEED_EMAIL,
+        passwordHash: hashPassword(config.ADMIN_SEED_PASSWORD),
+        role: "Admin",
+    });
+}
+
+export default router;
