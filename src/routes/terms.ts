@@ -18,10 +18,12 @@ const createSchema = z.object({
 router.post("/", requireAuth, async (req, res) => {
     const parsed = createSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json(parsed.error.flatten());
+
     const hash = crypto
         .createHash("sha256")
         .update(parsed.data.inviteCode.toLowerCase())
         .digest("hex");
+
     const t = await Term.create({
         name: parsed.data.name,
         code: parsed.data.code.toLowerCase(),
@@ -34,12 +36,14 @@ router.post("/", requireAuth, async (req, res) => {
         inviteMaxUses: parsed.data.inviteMaxUses,
         inviteUses: 0,
     });
+
     await TermMembership.create({
         userId: req.user!.id,
         termId: t._id,
         role: "Admin",
     });
-    res.json({ id: t._id, code: t.code });
+
+    res.status(201).json({ id: t._id, code: t.code, name: t.name });
 });
 
 router.get("/mine", requireAuth, async (req, res) => {
@@ -68,8 +72,10 @@ const joinSchema = z.object({ code: z.string().min(6) });
 router.post("/join", requireAuth, async (req, res) => {
     const parsed = joinSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json(parsed.error.flatten());
+
     const code = parsed.data.code.toLowerCase();
     const hash = crypto.createHash("sha256").update(code).digest("hex");
+
     const term = await Term.findOne({
         inviteCodeHash: hash,
         code: { $exists: true },
@@ -79,18 +85,82 @@ router.post("/join", requireAuth, async (req, res) => {
         return res.status(410).json({ error: "expired" });
     if (term.inviteMaxUses && (term.inviteUses || 0) >= term.inviteMaxUses)
         return res.status(409).json({ error: "limit_reached" });
+
     const exists = await TermMembership.findOne({
         termId: term._id,
         userId: req.user!.id,
     });
-    if (!exists)
+    if (!exists) {
         await TermMembership.create({
             termId: term._id,
             userId: req.user!.id,
             role: "Member",
         });
+    }
+
     await Term.updateOne({ _id: term._id }, { $inc: { inviteUses: 1 } });
     res.json({ termId: term._id, code: term.code });
+});
+
+router.get("/admin", requireAuth, async (req, res) => {
+    const adminMs = await TermMembership.find({
+        userId: req.user!.id,
+        role: "Admin",
+    }).sort({ createdAt: -1 });
+    if (adminMs.length === 0) return res.json({ items: [] });
+
+    const termIds = adminMs.map((m) => m.termId);
+    const terms = await Term.find({ _id: { $in: termIds } })
+        .select("_id name code isActive updatedAt")
+        .sort({ updatedAt: -1 });
+
+    const items = terms.map((t) => ({
+        id: String(t._id),
+        name: t.name,
+        code: t.code,
+        isActive: !!t.isActive,
+    }));
+
+    res.json({ items });
+});
+
+const patchSchema = z.object({
+    isActive: z.boolean().optional(),
+});
+
+router.patch("/:id", requireAuth, async (req, res) => {
+    const parsed = patchSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json(parsed.error.flatten());
+
+    const termId = req.params.id;
+
+    const membership = await TermMembership.findOne({
+        termId,
+        userId: req.user!.id,
+        role: "Admin",
+    });
+    if (!membership) return res.status(403).json({ error: "forbidden" });
+
+    const update: any = {};
+    if (typeof parsed.data.isActive === "boolean")
+        update.isActive = parsed.data.isActive;
+
+    if (Object.keys(update).length === 0)
+        return res.status(400).json({ error: "no_changes" });
+
+    const updated = await Term.findByIdAndUpdate(
+        termId,
+        { $set: update },
+        { new: true }
+    ).select("_id name code isActive");
+    if (!updated) return res.status(404).json({ error: "not_found" });
+
+    res.json({
+        id: updated._id,
+        name: updated.name,
+        code: updated.code,
+        isActive: !!updated.isActive,
+    });
 });
 
 export default router;
