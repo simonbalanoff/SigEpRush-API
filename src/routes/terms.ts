@@ -60,6 +60,7 @@ router.get("/mine", requireAuth, async (req, res) => {
             termId: t._id,
             name: t.name,
             code: t.code,
+            active: t.isActive,
             role: m.role,
             joinedAt: m.joinedAt,
         };
