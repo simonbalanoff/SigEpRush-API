@@ -11,6 +11,7 @@ const UserSchema = new Schema(
             index: true,
             trim: true,
         },
+        role: { type: String, default: "Member" },
         passwordHash: { type: String, required: true },
         isActive: { type: Boolean, default: true },
     },
@@ -21,6 +22,7 @@ export type UserDoc = {
     _id: any;
     name: string;
     email: string;
+    role: string;
     passwordHash: string;
     isActive: boolean;
 };

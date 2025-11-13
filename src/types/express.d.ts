@@ -6,6 +6,7 @@ declare module "express-serve-static-core" {
             id: string;
             name: string;
             email: string;
+            role: string;
         };
         membership?: {
             termId: string;
