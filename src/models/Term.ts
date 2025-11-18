@@ -7,6 +7,7 @@ const TermSchema = new Schema(
         isActive: { type: Boolean, default: true },
         createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
         inviteCodeHash: String,
+        inviteCode: String, // Admin only
         inviteExpiresAt: Date,
         inviteMaxUses: Number,
         inviteUses: { type: Number, default: 0 },
@@ -21,6 +22,7 @@ export type TermDoc = {
     isActive: boolean;
     createdBy: any;
     inviteCodeHash?: string;
+    inviteCode?: string;
     inviteExpiresAt?: Date;
     inviteMaxUses?: number;
     inviteUses: number;

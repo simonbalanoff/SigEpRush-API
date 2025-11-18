@@ -30,6 +30,7 @@ router.post("/", requireAuth, async (req, res) => {
         isActive: true,
         createdBy: req.user!.id,
         inviteCodeHash: hash,
+        inviteCode: parsed.data.inviteCode,
         inviteExpiresAt: parsed.data.inviteExpiresAt
             ? new Date(parsed.data.inviteExpiresAt)
             : undefined,
@@ -112,13 +113,14 @@ router.get("/admin", requireAuth, async (req, res) => {
 
     const termIds = adminMs.map((m) => m.termId);
     const terms = await Term.find({ _id: { $in: termIds } })
-        .select("_id name code isActive updatedAt")
+        .select("_id name code isActive updatedAt inviteCode")
         .sort({ updatedAt: -1 });
 
     const items = terms.map((t) => ({
         id: String(t._id),
         name: t.name,
         code: t.code,
+        inviteCode: t.inviteCode,
         isActive: !!t.isActive,
     }));
 
