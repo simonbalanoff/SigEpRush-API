@@ -8,6 +8,7 @@ import pnmsRouter from "./routes/pnms";
 import ratingsRouter from "./routes/ratings";
 import uploadsRouter from "./routes/uploads";
 import reactionsRouter from "./routes/reactions";
+import usersRouter from "./routes/users";
 
 const app = express();
 app.use(cors());
@@ -18,6 +19,7 @@ app.get('/', (req, res) => res.send(200));
 app.use("/auth", authRouter);
 app.use("/terms", termsRouter);
 app.use("/memberships", membershipsRouter);
+app.use("/users", usersRouter);
 app.use(pnmsRouter);
 app.use(ratingsRouter);
 app.use(uploadsRouter);
