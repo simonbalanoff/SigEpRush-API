@@ -50,7 +50,7 @@ const createSchema = z.object({
     preferredName: z.string().optional(),
     classYear: z.number().int().optional(),
     major: z.string().optional(),
-    gpa: z.number().min(0).max(4).optional(),
+    gpa: z.number().optional(),
     phone: z.string().optional(),
     status: z.enum(["new", "invited", "bid", "declined"]).optional(),
 });
