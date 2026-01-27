@@ -53,4 +53,17 @@ export type PNMDoc = {
     };
 };
 
+/*
+struct PNMCreate: Encodable {
+    let firstName: String
+    let lastName: String
+    let preferredName: String?
+    let classYear: Int?
+    let major: String?
+    let gpa: Double?
+    let phone: String?
+    let status: String?
+}
+*/
+
 export const PNM = model<PNMDoc>("PNM", PNMSchema);
