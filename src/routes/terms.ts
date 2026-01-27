@@ -24,27 +24,34 @@ router.post("/", requireAuth, async (req, res) => {
         .update(parsed.data.inviteCode.toLowerCase())
         .digest("hex");
 
-    const t = await Term.create({
-        name: parsed.data.name,
-        code: parsed.data.code.toLowerCase(),
-        isActive: true,
-        createdBy: req.user!.id,
-        inviteCodeHash: hash,
-        inviteCode: parsed.data.inviteCode,
-        inviteExpiresAt: parsed.data.inviteExpiresAt
-            ? new Date(parsed.data.inviteExpiresAt)
-            : undefined,
-        inviteMaxUses: parsed.data.inviteMaxUses,
-        inviteUses: 0,
-    });
+    try {
+        const t = await Term.create({
+            name: parsed.data.name,
+            code: parsed.data.code.toLowerCase(),
+            isActive: true,
+            createdBy: req.user!.id,
+            inviteCodeHash: hash,
+            inviteCode: parsed.data.inviteCode,
+            inviteExpiresAt: parsed.data.inviteExpiresAt
+                ? new Date(parsed.data.inviteExpiresAt)
+                : undefined,
+            inviteMaxUses: parsed.data.inviteMaxUses,
+            inviteUses: 0,
+        });
 
-    await TermMembership.create({
-        userId: req.user!.id,
-        termId: t._id,
-        role: "Admin",
-    });
+        await TermMembership.create({
+            userId: req.user!.id,
+            termId: t._id,
+            role: "Admin",
+        });
 
-    res.status(201).json({ id: t._id, code: t.code, name: t.name });
+        res.status(201).json({ id: t._id, code: t.code, name: t.name });
+    } catch (err: any) {
+        if (err?.code === 11000) {
+            return res.status(409).json({ error: "term_code_exists" });
+        }
+        throw err;
+    }
 });
 
 router.get("/mine", requireAuth, async (req, res) => {
@@ -53,7 +60,7 @@ router.get("/mine", requireAuth, async (req, res) => {
     });
     const termIds = ms.map((m) => m.termId);
     const terms = await Term.find({ _id: { $in: termIds } }).select(
-        "_id name code isActive createdAt updatedAt"
+        "_id name code isActive createdAt updatedAt",
     );
     const payload = ms.map((m) => {
         const t = terms.find((tt) => String(tt._id) === String(m.termId))!;
@@ -119,18 +126,20 @@ router.get("/admin", requireAuth, async (req, res) => {
     // Get member counts for each term
     const memberCounts = await TermMembership.aggregate([
         { $match: { termId: { $in: termIds } } },
-        { $group: { _id: "$termId", count: { $sum: 1 } } }
+        { $group: { _id: "$termId", count: { $sum: 1 } } },
     ]);
 
     const items = terms.map((t) => {
-        const countDoc = memberCounts.find(c => String(c._id) === String(t._id));
+        const countDoc = memberCounts.find(
+            (c) => String(c._id) === String(t._id),
+        );
         return {
             id: String(t._id),
             name: t.name,
             code: t.code,
             inviteCode: t.inviteCode,
             isActive: !!t.isActive,
-            memberCount: countDoc?.count || 0
+            memberCount: countDoc?.count || 0,
         };
     });
 
@@ -166,7 +175,7 @@ router.patch("/:id", requireAuth, async (req, res) => {
     const updated = await Term.findByIdAndUpdate(
         termId,
         { $set: update },
-        { new: true }
+        { new: true },
     ).select("_id name code isActive");
     if (!updated) return res.status(404).json({ error: "not_found" });
 
