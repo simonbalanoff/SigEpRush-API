@@ -116,18 +116,29 @@ router.get("/admin", requireAuth, async (req, res) => {
         .select("_id name code isActive updatedAt inviteCode")
         .sort({ updatedAt: -1 });
 
-    const items = terms.map((t) => ({
-        id: String(t._id),
-        name: t.name,
-        code: t.code,
-        inviteCode: t.inviteCode,
-        isActive: !!t.isActive,
-    }));
+    // Get member counts for each term
+    const memberCounts = await TermMembership.aggregate([
+        { $match: { termId: { $in: termIds } } },
+        { $group: { _id: "$termId", count: { $sum: 1 } } }
+    ]);
+
+    const items = terms.map((t) => {
+        const countDoc = memberCounts.find(c => String(c._id) === String(t._id));
+        return {
+            id: String(t._id),
+            name: t.name,
+            code: t.code,
+            inviteCode: t.inviteCode,
+            isActive: !!t.isActive,
+            memberCount: countDoc?.count || 0
+        };
+    });
 
     res.json({ items });
 });
 
 const patchSchema = z.object({
+    name: z.string().min(1).optional(),
     isActive: z.boolean().optional(),
 });
 
@@ -145,6 +156,7 @@ router.patch("/:id", requireAuth, async (req, res) => {
     if (!membership) return res.status(403).json({ error: "forbidden" });
 
     const update: any = {};
+    if (parsed.data.name) update.name = parsed.data.name;
     if (typeof parsed.data.isActive === "boolean")
         update.isActive = parsed.data.isActive;
 
