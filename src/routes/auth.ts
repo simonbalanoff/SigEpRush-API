@@ -26,7 +26,7 @@ router.post("/login", async (req, res) => {
     const parsed = loginSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json(parsed.error.flatten());
     const u = await User.findOne({ email: parsed.data.email });
-    if (!u) return res.status(401).json({ error: "invalid" });
+    if (!u || !u.isActive) return res.status(401).json({ error: "invalid" });
     const ok = verifyPassword(parsed.data.password, u.passwordHash);
     if (!ok) return res.status(401).json({ error: "invalid" });
     const token = signToken(String(u._id), u.email, u.name, u.role);
