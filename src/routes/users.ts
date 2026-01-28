@@ -5,7 +5,6 @@ import { requireAuth } from "../middleware/authz";
 
 const router = Router();
 
-// Middleware to check if user is admin
 const requireAdmin = async (req: any, res: any, next: any) => {
     if (!req.user || req.user.role !== "Admin") {
         return res.status(403).json({ error: "Admin access required" });
@@ -13,7 +12,6 @@ const requireAdmin = async (req: any, res: any, next: any) => {
     next();
 };
 
-// List all users (admin only)
 router.get("/", requireAuth, requireAdmin, async (req, res) => {
     const q = (req.query.q as string) || "";
     
@@ -45,7 +43,6 @@ router.get("/", requireAuth, requireAdmin, async (req, res) => {
     res.json({ items });
 });
 
-// Update user role (admin only)
 const updateRoleSchema = z.object({
     role: z.enum(["Admin", "Adder", "Member"])
 });
@@ -57,8 +54,7 @@ router.patch("/:userId/role", requireAuth, requireAdmin, async (req, res) => {
     if (!parsed.success) {
         return res.status(400).json(parsed.error.flatten());
     }
-    
-    // Prevent self-demotion from Admin
+
     if (userId === req.user!.id && req.user!.role === "Admin" && parsed.data.role !== "Admin") {
         return res.status(400).json({ error: "Cannot remove your own admin privileges" });
     }
@@ -78,6 +74,29 @@ router.patch("/:userId/role", requireAuth, requireAdmin, async (req, res) => {
         role: user.role,
         isActive: user.isActive
     });
+});
+
+router.delete("/me", requireAuth, async (req, res) => {
+    const userId = req.user!.id;
+    
+    const user = await User.findById(userId);
+    if (!user) {
+        return res.status(404).json({ error: "User not found" });
+    }
+    
+    if (user.role === "Admin") {
+        const adminCount = await User.countDocuments({ role: "Admin", isActive: true });
+        if (adminCount <= 1) {
+            return res.status(400).json({ 
+                error: "Cannot delete account. You are the last admin. Please assign another admin first." 
+            });
+        }
+    }
+    
+    user.isActive = false;
+    await user.save();
+    
+    res.json({ success: true, message: "Account deleted successfully" });
 });
 
 export default router;
