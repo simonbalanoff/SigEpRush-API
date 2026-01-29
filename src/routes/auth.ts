@@ -7,7 +7,7 @@ import { requireAuth } from "../middleware/authz";
 
 const router = Router();
 
-// Hardcoded invitation code - change this to whatever you want
+// Hardcoded invitation code
 const VALID_INVITATION_CODE = "SIGEP@CSU";
 
 const loginSchema = z.object({
