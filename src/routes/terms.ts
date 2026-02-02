@@ -62,17 +62,20 @@ router.get("/mine", requireAuth, async (req, res) => {
     const terms = await Term.find({ _id: { $in: termIds } }).select(
         "_id name code isActive createdAt updatedAt",
     );
-    const payload = ms.map((m) => {
-        const t = terms.find((tt) => String(tt._id) === String(m.termId))!;
-        return {
-            termId: t._id,
-            name: t.name,
-            code: t.code,
-            active: t.isActive,
-            role: m.role,
-            joinedAt: m.joinedAt,
-        };
-    });
+    const payload = ms
+        .map((m) => {
+            const t = terms.find((tt) => String(tt._id) === String(m.termId));
+            if (!t) return null;
+            return {
+                termId: t._id,
+                name: t.name,
+                code: t.code,
+                active: t.isActive,
+                role: m.role,
+                joinedAt: m.joinedAt,
+            };
+        })
+        .filter((item) => item !== null);
     res.json({ items: payload });
 });
 
