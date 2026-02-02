@@ -16,6 +16,7 @@ app.use(express.json({ limit: "8mb" }));
 app.use(morgan("dev"));
 
 app.get('/', (req, res) => res.send(200));
+app.get('/healthz', (req, res) => res.status(200).send('OK'));
 app.use("/auth", authRouter);
 app.use("/terms", termsRouter);
 app.use("/memberships", membershipsRouter);
