@@ -26,11 +26,4 @@ app.use(ratingsRouter);
 app.use(uploadsRouter);
 app.use(reactionsRouter);
 
-app.use((req, res, next) => {
-  if (req.path === "/healthz") {
-    console.log(req.headers["user-agent"]);
-  }
-  next();
-});
-
 export default app;
